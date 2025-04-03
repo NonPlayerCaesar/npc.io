@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin vs Gold Comparison</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .language-selector {
+            text-align: right;
+            margin-bottom: 30px;
+        }
+        .language-selector select {
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            background-color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .price-comparison {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+        .price-card {
+            flex: 1;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+        .price-card:hover {
+            transform: translateY(-5px);
+        }
+        .bitcoin {
+            background: linear-gradient(135deg, #ff9900 0%, #ff6b00 100%);
+            color: white;
+        }
+        .gold {
+            background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
+            color: black;
+        }
+        .price-card i {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .price-card h2 {
+            margin: 0 0 20px 0;
+            font-size: 1.8em;
+        }
+        .price-card p {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+        #chart-container {
+            margin: 40px auto;
+            max-width: 600px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .analysis-container {
+            margin-top: 40px;
+            text-align: center;
+            padding: 30px;
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .ratio-display {
+            font-size: 1.3em;
+            margin: 30px 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            display: block;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .highlight {
+            color: #dc3545;
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+        }
+        .loading {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .analyzing {
+            color: #17a2b8;
+            font-style: italic;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .price-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .market-cap-value {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="language-selector">
+            <select id="language" onchange="changeLanguage()">
+                <option value="zh-CN">简体中文</option>
+                <option value="zh-TW">繁體中文</option>
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+                <option value="ja">日本語</option>
+                <option value="it">Italiano</option>
+                <option value="es">Español</option>
+                <option value="ko">한국어</option>
+                <option value="nl">Nederlands</option>
+                <option value="pt">Português</option>
+                <option value="ar">العربية</option>
+                <option value="vi">Tiếng Việt</option>
+            </select>
+        </div>
+
+        <h1 id="main-title">比特币与黄金实时对比分析</h1>
+        
+        <div class="price-comparison">
+            <div class="price-card bitcoin">
+                <i class="fab fa-bitcoin"></i>
+                <h2 id="btc-title">比特币</h2>
+                <p><span id="current-price-text">当前价格</span>:</p>
+                <div class="price-value" id="btc-price">加载中...</div>
+                <p><span id="market-cap-text">市值</span>:</p>
+                <div class="market-cap-value" id="btc-market-cap">加载中...</div>
+            </div>
+            <div class="price-card gold">
+                <i class="fas fa-coins"></i>
+                <h2 id="gold-title">黄金</h2>
+                <p><span id="current-price-text2">当前价格</span>:</p>
+                <div class="price-value" id="gold-price">加载中...</div>
+                <p><span id="market-cap-text2">市值</span>:</p>
+                <div class="market-cap-value" id="gold-market-cap">加载中...</div>
+            </div>
+        </div>
+
+        <div class="ratio-display" id="market-cap-ratio">
+            <i class="fas fa-balance-scale"></i>
+            黄金市值是比特币的 <span id="ratio-value">计算中...</span> 倍
+        </div>
+
+        <div id="chart-container">
+            <canvas id="comparison-chart"></canvas>
+        </div>
+
+        <div class="analysis-container">
+            <h2 id="analysis-title"><i class="fas fa-chart-line"></i> 增长趋势分析</h2>
+            <p id="prediction">分析中...</p>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            'zh-CN': {
+                mainTitle: '比特币与黄金实时对比分析',
+                btcTitle: '比特币',
+                goldTitle: '黄金',
+                currentPrice: '当前价格',
+                marketCap: '市值',
+                analysisTitle: '增长趋势分析',
+                loading: '加载中...',
+                analyzing: '分析中...',
+                yearsPrediction: '基于当前增长趋势，如果比特币保持过去的平均增长率，预计在约{years}年后可能达到黄金的当前市值。',
+                marketCapChart: '市值 (万亿美元)',
+                ratioText: '黄金市值是比特币的 {ratio} 倍',
+                calculating: '计算中...'
+            },
+            'zh-TW': {
+                mainTitle: '比特幣與黃金即時對比分析',
+                btcTitle: '比特幣',
+                goldTitle: '黃金',
+                currentPrice: '當前價格',
+                marketCap: '市值',
+                analysisTitle: '增長趨勢分析',
+                loading: '載入中...',
+                analyzing: '分析中...',
+                yearsPrediction: '基於當前增長趨勢，如果比特幣保持過去的平均增長率，預計在約{years}年後可能達到黃金的當前市值。',
+                marketCapChart: '市值 (兆美元)',
+                ratioText: '黃金市值是比特幣的 {ratio} 倍',
+                calculating: '計算中...'
+            },
+            'en': {
+                mainTitle: 'Bitcoin vs Gold Real-time Comparison',
+                btcTitle: 'Bitcoin',
+                goldTitle: 'Gold',
+                currentPrice: 'Current Price',
+                marketCap: 'Market Cap',
+                analysisTitle: 'Growth Trend Analysis',
+                loading: 'Loading...',
+                analyzing: 'Analyzing...',
+                yearsPrediction: 'Based on current growth trends, if Bitcoin maintains its historical average growth rate, it may reach Gold\'s current market cap in approximately {years} years.',
+                marketCapChart: 'Market Cap (Trillion USD)',
+                ratioText: 'Gold\'s market cap is {ratio} times that of Bitcoin',
+                calculating: 'Calculating...'
+            },
+            'de': {
+                mainTitle: 'Bitcoin vs Gold Echtzeit-Vergleich',
+                btcTitle: 'Bitcoin',
+                goldTitle: 'Gold',
+                currentPrice: 'Aktueller Preis',
+                marketCap: 'Marktkapitalisierung',
+                analysisTitle: 'Wachstumstrend-Analyse',
+                loading: 'Laden...',
+                analyzing: 'Analysiere...',
+                yearsPrediction: 'Basierend auf aktuellen Wachstumstrends könnte Bitcoin bei Beibehaltung seiner historischen durchschnittlichen Wachstumsrate in etwa {years} Jahren die aktuelle Marktkapitalisierung von Gold erreichen.',
+                marketCapChart: 'Marktkapitalisatie (Biljoen USD)',
+                ratioText: 'De marktkapitalisatie van goud is {ratio} keer die van Bitcoin',
+                calculating: 'Berechne...'
+            },
+            'ja': {
+                mainTitle: 'ビットコインvsゴールド リアルタイム比較',
+                btcTitle: 'ビットコイン',
+                goldTitle: 'ゴールド',
+                currentPrice: '現在価格',
+                marketCap: '時価総額',
+                analysisTitle: '成長トレンド分析',
+                loading: '読み込み中...',
+                analyzing: '分析中...',
+                yearsPrediction: '現在の成長トレンドに基づき、ビットコインが過去の平均成長率を維持した場合、約{years}年後にゴールドの現在の時価総額に達する可能性があります。',
+                marketCapChart: '時価総額（兆ドル）',
+                ratioText: 'ゴールドの時価総額はビットコインの{ratio}倍です',
+                calculating: '計算中...'
+            },
+            'it': {
+                mainTitle: 'Bitcoin vs Oro Confronto in Tempo Reale',
+                btcTitle: 'Bitcoin',
+                goldTitle: 'Oro',
+                currentPrice: 'Prezzo Attuale',
+                marketCap: 'Capitalizzazione di Mercato',
+                analysisTitle: 'Analisi del Trend di Crescita',
+                loading: 'Caricamento...',
+                analyzing: 'Analisi...',
+                yearsPrediction: 'Basandosi sui trend di crescita attuali, se Bitcoin mantiene il suo tasso di crescita medio storico, potrebbe raggiungere la capitalizzazione di mercato attuale dell\'oro in circa {years} anni.',
+                marketCapChart: 'Capitalizzazione di Mercato (Trilioni USD)',
+                ratioText: 'La capitalizzazione di mercato dell\'oro è {ratio} volte quella del Bitcoin',
+                calculating: 'Calcolo...'
+            },
+            'es': {
+                mainTitle: 'Bitcoin vs Oro Comparación en Tiempo Real',
+                btcTitle: 'Bitcoin',
+                goldTitle: 'Oro',
+                currentPrice: 'Precio Actual',
+                marketCap: 'Capitalización de Mercado',
+                analysisTitle: 'Análisis de Tendencias de Crecimiento',
+                loading: 'Cargando...',
+                analyzing: 'Analizando...',
+                yearsPrediction: 'Basado en las tendencias de crecimiento actuales, si Bitcoin mantiene su tasa de crecimiento promedio histórica, podría alcanzar la capitalización de mercado actual del oro en aproximadamente {years} años.',
+                marketCapChart: 'Capitalización de Mercado (Billones USD)',
+                ratioText: 'La capitalización de mercado del oro es {ratio} veces la de Bitcoin',
+                calculating: 'Calculando...'
+            },
+            'ko': {
+                mainTitle: '비트코인 vs 골드 실시간 비교',
+                btcTitle: '비트코인',
+                goldTitle: '골드',
+                currentPrice: '현재 가격',
+                marketCap: '시가총액',
+                analysisTitle: '성장 추세 분석',
+                loading: '로딩 중...',
+                analyzing: '분석 중...',
+                yearsPrediction: '현재 성장 추세를 기반으로, 비트코인이 과거 평균 성장률을 유지한다면 약 {years}년 후에 골드의 현재 시가총액에 도달할 수 있습니다.',
+                marketCapChart: '시가총액 (조 달러)',
+                ratioText: '골드의 시가총액은 비트코인의 {ratio}배입니다',
+                calculating: '계산 중...'
+            },
+            'nl': {
+                mainTitle: 'Bitcoin vs Goud Real-time Vergelijking',
+                btcTitle: 'Bitcoin',
+                goldTitle: 'Goud',
+                currentPrice: 'Huidige Prijs',
+                marketCap: 'Marktkapitalisatie',
+                analysisTitle: 'Groei Trend Analyse',
+                loading: 'Laden...',
+                analyzing: 'Analyseren...',
+                yearsPrediction: 'Gebaseerd op huidige groeitrends, als Bitcoin zijn historische gemiddelde groeivoet behoudt, zou het de huidige marktkapitalisatie van goud kunnen bereiken in ongeveer {years} jaar.',
+                marketCapChart: 'Marktkapitalisatie (Biljoen USD)',
+                ratioText: 'De marktkapitalisatie van goud is {ratio} keer die van Bitcoin',
+                calculating: 'Berekenen...'
+            },
+            'pt': {
+                mainTitle: 'Bitcoin vs Ouro Comparação em Tempo Real',
+                btcTitle: 'Bitcoin',
+                goldTitle: 'Ouro',
+                currentPrice: 'Preço Atual',
+                marketCap: 'Capitalização de Mercado',
+                analysisTitle: 'Análise de Tendência de Crescimento',
+                loading: 'Carregando...',
+                analyzing: 'Analisando...',
+                yearsPrediction: 'Com base nas tendências atuais de crescimento, se o Bitcoin manter sua taxa média histórica de crescimento, poderá atingir a capitalização de mercado atual do ouro em aproximadamente {years} anos.',
+                marketCapChart: 'Capitalização de Mercado (Trilhões USD)',
+                ratioText: 'A capitalização de mercado do ouro é {ratio} vezes a do Bitcoin',
+                calculating: 'Calculando...'
+            },
+            'ar': {
+                mainTitle: 'مقارنة البيتكوين مقابل الذهب في الوقت الفعلي',
+                btcTitle: 'البيتكوين',
+                goldTitle: 'الذهب',
+                currentPrice: 'السعر الحالي',
+                marketCap: 'القيمة السوقية',
+                analysisTitle: 'تحليل اتجاه النمو',
+                loading: 'جاري التحميل...',
+                analyzing: 'جاري التحليل...',
+                yearsPrediction: 'بناءً على اتجاهات النمو الحالية، إذا حافظ البيتكوين على متوسط معدل نموه التاريخي، فقد يصل إلى القيمة السوقية الحالية للذهب في حوالي {years} سنة.',
+                marketCapChart: 'القيمة السوقية (تريليون دولار)',
+                ratioText: 'القيمة السوقية للذهب هي {ratio} ضعف قيمة البيتكوين',
+                calculating: 'جاري الحساب...'
+            },
+            'vi': {
+                mainTitle: 'So Sánh Bitcoin vs Vàng Thời Gian Thực',
+                btcTitle: 'Bitcoin',
+                goldTitle: 'Vàng',
+                currentPrice: 'Giá Hiện Tại',
+                marketCap: 'Vốn Hóa Thị Trường',
+                analysisTitle: 'Phân Tích Xu Hướng Tăng Trưởng',
+                loading: 'Đang Tải...',
+                analyzing: 'Đang Phân Tích...',
+                yearsPrediction: 'Dựa trên xu hướng tăng trưởng hiện tại, nếu Bitcoin duy trì tốc độ tăng trưởng trung bình lịch sử, nó có thể đạt được vốn hóa thị trường hiện tại của vàng trong khoảng {years} năm.',
+                marketCapChart: 'Vốn Hóa Thị Trường (Nghìn Tỷ USD)',
+                ratioText: 'Vốn hóa thị trường của vàng gấp {ratio} lần so với Bitcoin',
+                calculating: 'Đang Tính Toán...'
+            }
+        };
+
+        let currentLanguage = 'zh-CN';
+        let chart = null;
+
+        // 检测浏览器语言并设置默认语言
+        function detectBrowserLanguage() {
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('zh')) {
+                if (browserLang === 'zh-TW' || browserLang === 'zh-HK') {
+                    return 'zh-TW';
+                }
+                return 'zh-CN';
+            }
+            return 'en';
+        }
+
+        // 初始化语言选择器
+        function initializeLanguageSelector() {
+            const languageSelect = document.getElementById('language');
+            currentLanguage = detectBrowserLanguage();
+            languageSelect.value = currentLanguage;
+        }
+
+        function changeLanguage() {
+            currentLanguage = document.getElementById('language').value;
+            updateUIText();
+            if (chart) {
+                chart.destroy();
+            }
+            fetchData();
+        }
+
+        function updateUIText() {
+            const t = translations[currentLanguage];
+            document.getElementById('main-title').textContent = t.mainTitle;
+            document.getElementById('btc-title').textContent = t.btcTitle;
+            document.getElementById('gold-title').textContent = t.goldTitle;
+            document.querySelectorAll('#current-price-text, #current-price-text2').forEach(el => el.textContent = t.currentPrice);
+            document.querySelectorAll('#market-cap-text, #market-cap-text2').forEach(el => el.textContent = t.marketCap);
+            document.getElementById('analysis-title').textContent = t.analysisTitle;
+            
+            // 更新比率显示文本
+            const ratioValue = document.getElementById('ratio-value').textContent;
+            if (ratioValue === '计算中...' || ratioValue === '載入中...' || ratioValue === 'Loading...') {
+                document.getElementById('market-cap-ratio').innerHTML = t.ratioText.replace('{ratio}', `<span id="ratio-value">${t.calculating}</span>`);
+            } else {
+                document.getElementById('market-cap-ratio').innerHTML = t.ratioText.replace('{ratio}', `<span id="ratio-value">${ratioValue}</span>`);
+            }
+        }
+
+        async function fetchData() {
+            try {
+                const t = translations[currentLanguage];
+                // 更新加载状态
+                document.getElementById('btc-price').innerHTML = `<span class="loading">${t.loading}</span>`;
+                document.getElementById('gold-price').innerHTML = `<span class="loading">${t.loading}</span>`;
+                document.getElementById('btc-market-cap').innerHTML = `<span class="loading">${t.loading}</span>`;
+                document.getElementById('gold-market-cap').innerHTML = `<span class="loading">${t.loading}</span>`;
+                document.getElementById('market-cap-ratio').innerHTML = t.ratioText.replace('{ratio}', `<span id="ratio-value" class="loading">${t.calculating}</span>`);
+                document.getElementById('prediction').innerHTML = `<span class="analyzing">${t.analyzing}</span>`;
+
+                // 获取比特币数据
+                const btcResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_market_cap=true');
+                const btcData = await btcResponse.json();
+                
+                // 获取比特币历史数据用于计算增长率
+                const btcHistoryResponse = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365');
+                const btcHistoryData = await btcHistoryResponse.json();
+                
+                // 获取黄金数据
+                const goldResponse = await fetch('https://www.goldapi.io/api/XAU/USD', {
+                    headers: {
+                        'x-access-token': 'goldapi-insjpsm8ziffmn-io'
+                    }
+                });
+                const goldData = await goldResponse.json();
+
+                // 计算比特币年增长率
+                const btcPrices = btcHistoryData.prices;
+                const oldestPrice = btcPrices[0][1];
+                const newestPrice = btcPrices[btcPrices.length - 1][1];
+                const btcGrowthRate = (newestPrice / oldestPrice) - 1;
+
+                // 更新比特币显示数据
+                document.getElementById('btc-price').textContent = `$${btcData.bitcoin.usd.toLocaleString()}`;
+                document.getElementById('btc-market-cap').textContent = `$${(btcData.bitcoin.usd_market_cap/1e9).toFixed(2)}B`;
+
+                // 更新黄金显示数据
+                document.getElementById('gold-price').textContent = `$${goldData.price.toLocaleString()}/oz`;
+                
+                // 计算黄金市值（基于全球黄金储备约197,576吨）
+                const goldOuncesPerTon = 35273.962;
+                const totalGoldOunces = 197576 * goldOuncesPerTon;
+                const goldMarketCap = (goldData.price * totalGoldOunces) / 1e12; // 转换为万亿美元
+                document.getElementById('gold-market-cap').textContent = `$${goldMarketCap.toFixed(2)}T`;
+
+                const btcMarketCap = btcData.bitcoin.usd_market_cap/1e12;
+                const yearsToCatch = calculateYearsToCatch(btcMarketCap, goldMarketCap, btcGrowthRate);
+                
+                const ratio = (goldMarketCap / btcMarketCap).toFixed(2);
+                document.getElementById('market-cap-ratio').innerHTML = t.ratioText.replace('{ratio}', `<span id="ratio-value">${ratio}</span>`);
+                
+                const predictionText = t.yearsPrediction.replace('{years}', `<span class="highlight">${yearsToCatch}</span>`);
+                document.getElementById('prediction').innerHTML = predictionText;
+
+                updateChart(btcMarketCap, goldMarketCap);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                const t = translations[currentLanguage];
+                document.getElementById('prediction').innerHTML = `<span class="error">数据获取失败，请稍后重试</span>`;
+            }
+        }
+
+        function calculateYearsToCatch(btcMarketCap, goldMarketCap, btcGrowthRate) {
+            if (btcGrowthRate <= 0) return '无法预测';
+            return Math.ceil(Math.log(goldMarketCap/btcMarketCap) / Math.log(1 + btcGrowthRate));
+        }
+
+        function updateChart(btcMarketCap, goldMarketCap) {
+            const ctx = document.getElementById('comparison-chart').getContext('2d');
+            const t = translations[currentLanguage];
+            
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [t.btcTitle, t.goldTitle],
+                    datasets: [{
+                        label: t.marketCapChart,
+                        data: [btcMarketCap, goldMarketCap],
+                        backgroundColor: ['#ff9900', '#ffd700'],
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初始化
+        initializeLanguageSelector();
+        updateUIText();
+        fetchData();
+        setInterval(fetchData, 60000);
+    </script>
+</body>
+</html>
+
